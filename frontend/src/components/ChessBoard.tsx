@@ -2,12 +2,13 @@ import React, { useEffect, useState } from 'react'
 import Game from './Game'
 import { useSocket } from '../hooks/useSocket'
 import {Chess} from 'chess.js'
+import type { boardType } from '../types/board'
 
 const ChessBoard = () => {
   const socket = useSocket();
 
   const [chess, setChess] = useState(new Chess());
-  const [board, setBoard] = useState(chess.board());
+  const [board, setBoard] = useState<boardType | null>(chess.board());
 
   useEffect(()=>{
       if(!socket){
@@ -24,6 +25,7 @@ const ChessBoard = () => {
                 break;
         case 'move': 
                 const move = message.payload.move;
+                console.log(move)
                 chess.move(move);
                 setBoard(chess.board());
                 console.log("move received");
@@ -35,7 +37,7 @@ const ChessBoard = () => {
                 console.log("unknown message received");
       }
     }
-  }, [socket, chess])
+  }, [socket, board, chess])
 
   if(!socket) return (<div>Loading...</div>);
 

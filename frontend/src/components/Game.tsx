@@ -1,22 +1,44 @@
 import type { Color, PieceSymbol, Square } from 'chess.js'
-import React, { useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
+import type { boardType } from '../types/board';
 
 function Game({board, socket, setBoard, chess}: {
-    board: ({
-        square: Square,
-        type: PieceSymbol,
-        color: Color
-    } | null)[][],
+    board: boardType | null,
     socket: WebSocket, 
     setBoard: any,
     chess: any
 }) {
-
+    useEffect(()=>{
+        if(!socket){
+            return;
+        }
+        socket.onmessage = (event)=>{
+            const message = JSON.parse(event.data);
+            switch(message.type){
+                case "invalid_move":
+                        setFrom(null);
+                        setTo(null);
+                        setInvalidMove(true);
+                        //@ts-ignore
+                        audioRef?.current?.play();
+                        setTimeout(()=>{
+                            setInvalidMove(false);
+                            //@ts-ignore
+                            audioRef?.current?.pause();
+                        }, 2000)
+                        break;
+            }
+        }
+    }, [socket.onmessage])
     const [from, setFrom] = useState<Square | null>(null);
     const [to, setTo] = useState<Square | null>(null);
+    const audioRef = useRef(null);
+    const [invalidMove, setInvalidMove] = useState(false);
   return (
     <div className='text-white'>
-      {board.map((row, i)=>{
+        <h1 className={`text-3xl ${invalidMove? 'visible': 'invisible'} text-black`}>Invalid Move</h1>
+        <audio ref={audioRef} src="./illegal.mp3"></audio>
+      {board!.map((row, i)=>{
         return <div key={i} className='flex'>
             {
                 row.map((square, j)=>{
