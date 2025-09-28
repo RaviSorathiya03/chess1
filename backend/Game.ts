@@ -1,6 +1,8 @@
 import type WebSocket from "ws";
 import { Chess, Move } from "chess.js";
 import { CHECK, GAME_OVER, INIT_GAME, INVALID_MOVE, MOVE } from "./messages";
+import {redis} from  "./redisConfig"
+
 
 export class Game {
   public player1: WebSocket;
@@ -8,17 +10,22 @@ export class Game {
   private board: Chess;
   private moves: string[];
   private startTime: Date;
+  private gameId: string
+  private boardFEN: string
 
-  constructor(player1: WebSocket, player2: WebSocket) {
+  constructor(player1: WebSocket, player2: WebSocket, gameId: string) {
     this.player1 = player1;
     this.player2 = player2;
     this.board = new Chess();
     this.moves = [];
     this.startTime = new Date();
-
+    this.gameId = gameId;
+    this.boardFEN = this.board.fen();
     // Notify players of initial game state
-    this.sendToPlayer(this.player1, INIT_GAME, { color: "white" });
-    this.sendToPlayer(this.player2, INIT_GAME, { color: "black" });
+    console.log("control is inside the contructor of the game state")
+    this.sendToPlayer(this.player1, INIT_GAME, { color: "w", gameId, playerId: "player1" });
+    this.sendToPlayer(this.player2, INIT_GAME, { color: "b", gameId, playerId: "player2"});
+    console.log("control is in the last part of the contructor")
   }
 
   /**
@@ -72,7 +79,7 @@ export class Game {
   /**
    * Make a move for the current player
    */
-  public makeMove(socket: WebSocket, move: { from: string; to: string }) {
+  public async makeMove(socket: WebSocket, move: { from: string; to: string }) {
     // Validate turn based on socket
     const currentTurn = this.board.turn(); // 'w' or 'b'
     if ((currentTurn === "w" && socket !== this.player1) ||
@@ -87,7 +94,8 @@ export class Game {
       }
 
       this.moves.push(result.san); // store SAN notation move
-
+      await redis.rPush(`game:${this.gameId}:moves`, JSON.stringify(move));
+      await redis.set(`game:${this.gameId}:board`, this.boardFEN);
       // Notify other player about the move
       this.broadcastMove(move);
 
@@ -103,4 +111,26 @@ export class Game {
       });
     }
   }
+
+   reconnect(board: string, moves: string[], playerId: string){
+    if(playerId == "player1"){
+        this.player1.send(JSON.stringify({
+            type: "reconnect",
+            payload:{
+                board: board,
+                moves,
+            }
+        }))
+    } else{
+        this.player2.send(JSON.stringify({
+            type: "reconnect",
+            payload: {
+                board: board,
+                moves
+            }
+        }))
+    }
+  } 
+
+
 }

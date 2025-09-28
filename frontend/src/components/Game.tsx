@@ -50,6 +50,7 @@ export default function Game({ board, socket, setBoard, chess, checkEvent, inval
     const piece = chess.get(square);
     if (!from) {
       if (!piece || piece.color !== playerColor) return;
+      console.log(piece.color==playerColor)
       setFrom(square);
     } else {
       socket.send(JSON.stringify({ type: 'move', payload: { move: { from, to: square } } }));
