@@ -58,15 +58,25 @@ export default function Game({
 
   const handleSquareClick = (square: Square) => {
     const piece = chess.get(square)
+
     if (!from) {
       if (!piece || piece.color !== playerColor) return
       setFrom(square)
     } else {
+      if (from === square) {
+        setFrom(null)
+        return
+      }
+
+      if (piece && piece.color === playerColor) {
+        setFrom(square)
+        return
+      }
+
       socket.send(JSON.stringify({ type: "move", payload: { move: { from, to: square } } }))
       chess.move({ from, to: square })
       setFrom(null)
       setBoard(chess.board())
-      setCheckedKingSquare(null)
     }
   }
 

@@ -45,6 +45,7 @@ const ChessBoard = () => {
         case "move":
           chess.move(message.payload.move)
           setBoard(chess.board())
+          setCheckEvent(null)
           break
 
         case "check":
