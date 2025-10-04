@@ -24,20 +24,26 @@ const ChessBoard = () => {
   const handleSocketMessage = useCallback(
     (event: MessageEvent) => {
       const message = JSON.parse(event.data)
+      console.log("[v0] Received message:", message.type, message.payload)
 
       switch (message.type) {
         case "init_game":
+          console.log("[v0] init_game received, payload:", message.payload)
           if (message.payload?.playerId && message.payload?.gameId) {
             const playerId = Cookie.get("playerId")
             const gameId = Cookie.get("gameId")
+            console.log("[v0] Existing cookies - playerId:", playerId, "gameId:", gameId)
 
             if (!playerId || !gameId) {
               const newGame = new Chess()
               setChess(newGame)
               setBoard(newGame.board())
-              setPlayerColor(message.payload.color)
+              const assignedColor = message.payload.color
+              console.log("[v0] Setting player color to:", assignedColor)
+              setPlayerColor(assignedColor)
               Cookie.set("playerId", message.payload.playerId)
               Cookie.set("gameId", message.payload.gameId)
+              console.log("[v0] Cookies set - playerId:", message.payload.playerId, "gameId:", message.payload.gameId)
             }
           }
           break
@@ -70,12 +76,15 @@ const ChessBoard = () => {
         case "game_started":
           setWaiting(false)
           setGameStarted(true)
+          console.log("[v0] Game started! Current player color:", playerColor)
           break
 
         case "reconnect":
+          console.log("[v0] Reconnect received, payload:", message.payload)
           const fen = message.payload?.board
           const moves = message.payload?.moves
           if (message.payload?.color) {
+            console.log("[v0] Reconnect - setting player color to:", message.payload.color)
             setPlayerColor(message.payload.color)
           }
 
@@ -100,7 +109,7 @@ const ChessBoard = () => {
           break
       }
     },
-    [chess],
+    [chess, playerColor],
   )
 
   useEffect(() => {
@@ -115,6 +124,7 @@ const ChessBoard = () => {
     const gameId = Cookie.get("gameId")
 
     if (playerId && gameId) {
+      console.log("[v0] Attempting reconnect with playerId:", playerId, "gameId:", gameId)
       const reconnectPayload = {
         type: "reconnect",
         payload: { playerId, gameId },
@@ -124,6 +134,7 @@ const ChessBoard = () => {
   }, [socket])
 
   const handlePlayClick = () => {
+    console.log("[v0] Play button clicked, sending init_game")
     socket?.send(JSON.stringify({ type: "init_game" }))
   }
 
