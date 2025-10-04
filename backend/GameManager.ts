@@ -46,8 +46,9 @@ export class GameManager {
 
           this.users.set(this.pendingUser, { gameId, playerId: "player1" });
           this.users.set(socket, { gameId, playerId: "player2" });
-
+          this.pendingUser.send(JSON.stringify({ type: "game_started" }));
           this.pendingUser = null;
+          socket.send(JSON.stringify({ type: "game_started" }));
         } else {
           this.pendingUser = socket;
           this.pendingUser.send(JSON.stringify({ type: "pending_user" }));
