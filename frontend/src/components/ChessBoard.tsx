@@ -138,6 +138,18 @@ const ChessBoard = () => {
     socket?.send(JSON.stringify({ type: "init_game" }))
   }
 
+  const handleResign = () => {
+    if (window.confirm("Are you sure you want to resign? This will end the game.")) {
+      console.log("[v0] Player resigned, sending disconnect")
+      socket?.send(JSON.stringify({ type: "disconnect" }))
+      Cookie.remove("playerId")
+      Cookie.remove("gameId")
+      setGameStarted(false)
+      setWaiting(false)
+      setGameOver(true)
+    }
+  }
+
   const gameStatus = chess.isCheckmate() ? "Checkmate" : chess.isCheck() ? "Check" : "Active"
 
   if (!socket) {
@@ -183,7 +195,12 @@ const ChessBoard = () => {
                 moveCount={chess.history().length}
                 gameStatus={gameStatus}
               />
-              <GameControls gameStarted={gameStarted} waiting={waiting} onPlayClick={handlePlayClick} />
+              <GameControls
+                gameStarted={gameStarted}
+                waiting={waiting}
+                onPlayClick={handlePlayClick}
+                onResign={handleResign}
+              />
             </div>
           </div>
         </div>

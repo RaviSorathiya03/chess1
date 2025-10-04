@@ -6,9 +6,24 @@ interface GameControlsProps {
   gameStarted: boolean
   waiting: boolean
   onPlayClick: () => void
+  onResign?: () => void
 }
 
-export function GameControls({ gameStarted, waiting, onPlayClick }: GameControlsProps) {
+export function GameControls({ gameStarted, waiting, onPlayClick, onResign }: GameControlsProps) {
+  if (gameStarted && onResign) {
+    return (
+      <div className="p-4 sm:p-6 border-t border-slate-100">
+        <Button
+          onClick={onResign}
+          variant="outline"
+          className="w-full border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 hover:border-red-300 font-semibold py-5 sm:py-6 text-base sm:text-lg rounded-xl transition-all duration-200 bg-transparent"
+        >
+          Resign Game
+        </Button>
+      </div>
+    )
+  }
+
   if (gameStarted) {
     return null
   }
