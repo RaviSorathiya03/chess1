@@ -29,7 +29,7 @@ export function ChessSquare({
         flex justify-center items-center
         transition-all duration-150
         relative
-        ${isLightSquare ? "bg-amber-50" : "bg-amber-800"}
+        ${isLightSquare ? "bg-amber-50" : "bg-gray-800"}
         ${isCheckedKing ? "!bg-red-500 animate-pulse" : ""}
         ${isSelected ? "ring-4 ring-inset ring-blue-500 !bg-blue-100" : ""}
         ${square && square.color === playerColor ? "hover:brightness-95 active:scale-95 cursor-pointer" : "cursor-default"}
