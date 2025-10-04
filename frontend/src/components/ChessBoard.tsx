@@ -62,14 +62,32 @@ const ChessBoard = () => {
           setGameOver(true);
           break;
 
-        case "reconnect":
-          console.log("Reconnection successful, restoring board");
-          if (message.payload?.boardFEN) {
-            const newChess = new Chess(message.payload.boardFEN);
-            setChess(newChess);
-            setBoard(newChess.board());
-          }
-          break;
+      case "reconnect":
+  console.log("Reconnection successful, restoring board");
+  const fen = message.payload?.board;
+  const moves = message.payload?.moves;
+
+  if (fen) {
+    const newChess = new Chess(fen);
+
+    if (moves?.length) {
+      moves.forEach((move: any) => {
+        const moveObj = typeof move === "string" ? JSON.parse(move) : move;
+        newChess.move(moveObj);
+      });
+    }
+
+    setChess(newChess);
+    setBoard(
+      newChess.board().map(row => row.map(cell => (cell ? { ...cell } : null)))
+    );
+  }
+  break;
+
+        case "clear_cookies":
+            Cookie.remove("playerId");
+            Cookie.remove("gameId");
+            break;
 
         default:
           console.log("Unknown message received", message);

@@ -12,6 +12,7 @@ export class Game {
   private startTime: Date;
   private gameId: string
   private boardFEN: string
+  private disconnectedPlayers = new Set<string>();
 
   constructor(player1: WebSocket, player2: WebSocket, gameId: string) {
     this.player1 = player1;
@@ -26,6 +27,29 @@ export class Game {
     this.sendToPlayer(this.player1, INIT_GAME, { color: "w", gameId, playerId: "player1" });
     this.sendToPlayer(this.player2, INIT_GAME, { color: "b", gameId, playerId: "player2"});
     console.log("control is in the last part of the contructor")
+
+    this.player1.on("close", () => this.handleDisconnect("player1"));
+    this.player2.on("close", () => this.handleDisconnect("player2"));
+  }
+
+   private async handleDisconnect(player: "player1" | "player2") {
+    console.log(`${player} disconnected`);
+    this.disconnectedPlayers.add(player);
+
+    // If both players disconnected → clean up Redis + notify to clear cookies
+    if (this.disconnectedPlayers.has("player1") && this.disconnectedPlayers.has("player2")) {
+      console.log(`Both players disconnected → cleaning up game ${this.gameId}`);
+
+      await redis.del(`game:${this.gameId}:moves`);
+      await redis.del(`game:${this.gameId}:board`);
+
+      try {
+        this.player1.send(JSON.stringify({ type: "clear_cookies" }));
+      } catch (_) {}
+      try {
+        this.player2.send(JSON.stringify({ type: "clear_cookies" }));
+      } catch (_) {}
+    }
   }
 
   /**
@@ -103,6 +127,8 @@ export class Game {
       this.handleCheck();
       this.handleGameOver();
 
+      
+
     } catch (error) {
       // Send invalid move notification
       const playerToNotify = currentTurn === "w" ? this.player1 : this.player2;
@@ -112,25 +138,29 @@ export class Game {
     }
   }
 
-   reconnect(board: string, moves: string[], playerId: string){
-    if(playerId == "player1"){
-        this.player1.send(JSON.stringify({
-            type: "reconnect",
-            payload:{
-                board: board,
-                moves,
-            }
-        }))
-    } else{
-        this.player2.send(JSON.stringify({
-            type: "reconnect",
-            payload: {
-                board: board,
-                moves
-            }
-        }))
-    }
-  } 
+  reconnect(socket: WebSocket, board: string, moves: string[], playerId: string){
+   console.log("control is reaching here")
+   console.log(playerId)
+   if(playerId == "player1"){
+        this.player1 = socket;
+       this.player1.send(JSON.stringify({
+           type: "reconnect",
+           payload:{
+               board: board,
+               moves,
+           }
+       }))
+   } else{
+        this.player2 = socket;
+       this.player2.send(JSON.stringify({
+           type: "reconnect",
+           payload: {
+               board: board,
+               moves
+           }
+       }))
+   }
+} 
 
 
 }
