@@ -23,6 +23,14 @@ export class GameManager {
   removeUser(socket: WebSocket) {
     this.users.delete(socket);
     // Optionally handle game termination if needed
+    if (this.pendingUser === socket) {
+      console.log("Pending user disconnected — resetting pendingUser");
+      this.pendingUser = null;
+    }
+
+    this.users.delete(socket);
+
+    
   }
 
   private addHandlers(socket: WebSocket) {
@@ -42,6 +50,7 @@ export class GameManager {
           this.pendingUser = null;
         } else {
           this.pendingUser = socket;
+          this.pendingUser.send(JSON.stringify({ type: "pending_user" }));
         }
       }
 

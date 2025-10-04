@@ -4,6 +4,7 @@ import { useSocket } from '../hooks/useSocket';
 import { Chess, type Color } from 'chess.js';
 import type { boardType } from '../types/board';
 import Cookie from "js-cookie";
+import { Button } from './ui/button';
 
 const ChessBoard = () => {
   const socket = useSocket();
@@ -13,6 +14,7 @@ const ChessBoard = () => {
   const [invalidMove, setInvalidMove] = useState(false);
   const [gameOver, setGameOver] = useState(false);
   const [playerColor, setPlayerColor] = useState<Color>("w");
+  const [waiting, setWaiting] = useState(false);
 
   // Handle incoming socket messages
   const handleSocketMessage = useCallback(
@@ -58,8 +60,13 @@ const ChessBoard = () => {
           break;
 
         case "game_over":
-          console.log("Game over");
+          Cookie.remove("playerId");
+          Cookie.remove("gameId");
           setGameOver(true);
+          break;
+
+        case "pending_user":
+          setWaiting(true);
           break;
 
       case "reconnect":
@@ -138,13 +145,13 @@ const ChessBoard = () => {
             />
           </div>
           <div className="col-span-4">
-            <button
+            <Button
               onClick={() => {
                 socket.send(JSON.stringify({ type: 'init_game' }));
               }}
             >
-              Play
-            </button>
+              {waiting ? "Waiting for opponent" : "Play"}
+            </Button>
           </div>
         </div>
       </div>
